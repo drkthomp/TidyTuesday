@@ -3,12 +3,12 @@ library(lubridate) # for date processing
 library(geofacet)
 library(colorspace)
 
+setwd("2022/week2")
 colony <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-01-11/colony.csv')
 stressor <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-01-11/stressor.csv')
-stressor_all <- stressor %>% group_by(year, months, state) %>% summarize(all_stressors=sum(stress_pct,na.rm=TRUE))
 
 
-data <- left_join(left_join(colony, stressor %>% pivot_wider(id_cols=c("year", "months", "state"),names_from="stressor",values_from="stress_pct")),stressor_all)
+data <- left_join(colony, stressor %>% pivot_wider(id_cols=c("year", "months", "state"),names_from="stressor",values_from="stress_pct"))
 # combine data
 #data <- left_join(colony, stressor)
 # add date time
@@ -35,7 +35,7 @@ varroa_mites_plot <- ggplot(left_join(data, varroa_state_correl),
          "It varies by state, but overall correlation is weak (",
          round(cor(data$varroa_mites, data$colony_lost_pct,use = "complete.obs"),2),
          ")"),
-       y="% Loss", x="% Varroa mites") + 
+       y="% Loss", x="% of Colonies Stressed by Varroa mites") + 
   theme_bw() + 
   theme(panel.spacing=unit(0, "lines"),
         plot.title=element_text(size=25,vjust = -9),
@@ -62,7 +62,7 @@ pesticides_plot <- ggplot(left_join(data, pesticides_state_correl), aes(pesticid
          "It varies by state, but overall correlation is minimal (",
          round(cor(data$pesticides, data$colony_lost_pct,use = "complete.obs"),2),
          ")"),
-       y="% Loss", x="% Pesticides") + 
+       y="% Loss", x="% of Colonies Stressed by Pesticides") + 
   theme_bw() + 
   theme(panel.spacing=unit(0, "lines"),
         plot.title=element_text(size=25,vjust = -9),
