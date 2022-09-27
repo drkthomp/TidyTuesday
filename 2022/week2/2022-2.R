@@ -47,7 +47,7 @@ varroa_mites_plot <- ggplot(left_join(data, varroa_state_correl),
   scale_fill_continuous_diverging(name="Pearson\nCorrelation",breaks=seq(from=-1,to=1,by=0.25),palette="Purple-Green,", mid=0) + 
   theme(axis.text.x = element_text(size=6))
 varroa_mites_plot
-ggsave("varroa_mites_plot.png", plot=varroa_mites_plot,dpi=600,scale = 1.5)
+ggsave("varroa_mites_plot.png", plot=varroa_mites_plot,dpi=600,scale = 1.5,width=11.5,height=6.8)
 
 
 # pesticides 
@@ -74,4 +74,31 @@ pesticides_plot <- ggplot(left_join(data, pesticides_state_correl), aes(pesticid
   scale_fill_continuous_diverging(name="Pearson\nCorrelation",breaks=seq(from=-1,to=1,by=0.25),palette="Purple-Green,", mid=0) + 
   theme(axis.text.x = element_text(size=6))
 pesticides_plot
-ggsave("pesticides_plot.png", plot=pesticides_plot,dpi=600,scale = 1.5)
+ggsave("pesticides_plot.png", plot=pesticides_plot,dpi=600,scale = 1.5,width=11.5,height=6.8)
+
+# other 
+other_state_correl <- data %>% group_by(state) %>% summarize(state_correl = cor(other, colony_lost_pct,use="complete.obs"))
+
+other_plot <- ggplot(left_join(data, other_state_correl), aes(pesticides, colony_lost_pct,color=state_correl,fill=state_correl)) +
+  geom_point(alpha=0.3,size=0.2,color="black") +
+  geom_smooth(alpha=0.8,method = "lm") +
+  facet_geo(~state,grid = my_us_grid) + 
+  labs(title="Do other stressors (e.g. weather, hive damage) impact colony loss?",
+       subtitle=paste0(
+         "It varies by state, but overall correlation is minimal (",
+         round(cor(data$other, data$colony_lost_pct,use = "complete.obs"),2),
+         ")"),
+       y="% Loss", x="% of Colonies Stressed by Other Stressors") + 
+  theme_bw() + 
+  theme(panel.spacing=unit(0, "lines"),
+        plot.title=element_text(size=25,vjust = -9),
+        plot.subtitle=element_text(size=15,vjust=-14),
+        strip.text.x = element_text(margin = margin(.05, 0, .05, 0, "cm"),
+                                    size=6),
+        strip.background = element_rect(fill=FALSE,color=FALSE)) + 
+  scale_color_continuous_diverging(name="Pearson\nCorrelation",breaks=seq(from=-1,to=1,by=0.25),palette="Purple-Green,", mid=0) + 
+  scale_fill_continuous_diverging(name="Pearson\nCorrelation",breaks=seq(from=-1,to=1,by=0.25),palette="Purple-Green,", mid=0) + 
+  theme(axis.text.x = element_text(size=6))
+other_plot
+ggsave("other_plot.png", plot=other_plot,dpi=600,scale = 1.5,width=11.5,height=6.8)
+
