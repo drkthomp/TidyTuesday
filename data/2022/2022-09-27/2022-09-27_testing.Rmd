@@ -1,0 +1,49 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r Libraries}
+library(tidyverse)
+theme_set(theme_minimal())
+```
+```{r Getting Data}
+artists <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2022/2022-09-27/artists.csv')
+```
+# Okay, what are we looking at? 
+We have three categorical variables -- `r length(unique(artists$state)) ` states, `r length(unique(artists$race)) ` races, and `r length(unique(artists$type)) ` types of artist. In theory these produce `r length(unique(artists$state)) * length(unique(artists$race)) * 
+length(unique(artists$type))` possible combinations, which is the number of observations in the data. 
+Not all of these observations, though have all the data. Some have an NA in the `artists_n` and thus the share and quotient -- `r as.numeric(count(artists %>% filter(is.na(artists_n))))`, specifically. Another `r as.numeric(count(artists %>% filter(artists_n == 0)))` have a known number of artists, but it is 0. In the majority of these cases this means that the share and quotient are thus NA, expect for two oddities: 
+```{r}
+artists %>% filter(artists_n == 0 & !is.na(artists_share))
+```
+I think it makes sense to: 
+
+1. Remove entries that we just don't have artists counts for 
+```{r}
+artists <- artists %>% filter(!is.na(artists_n))
+```
+
+2. Replace NAs in share and quotient on entries with 0 artists with 0 
+Since we know what we have (0 artists) its fair to represent the share as 0 (0/all_workers_n), and we know the quotient must be 100% below the national labor force share. 
+```{r}
+artists <- artists %>% mutate(artists_share = if_else(artists_n == 0,0, artists_share),location_quotient = if_else(artists_n == 0,0, location_quotient))
+```
+# Playing with plotting
+```{r}
+ggplot(artists, aes(all_workers_n, artists_n, color=race)) + geom_point() + geom_smooth()
+```
+Makes since this doesn't work, numbers would be different. 
+```{r fig.width=10, fig.height=4}
+ggplot(artists, aes(all_workers_n, artists_n, color=type))  + stat_smooth(geom='line', alpha=0.5, se=FALSE) +  geom_point() + facet_wrap(vars(race), scales="free")
+```
+Nice! Let's remake some orderings. 
+```{r}
+race_sort <- (artists %>% group_by(race) %>% summarize(a= mean(all_workers_n,na.rm=TRUE)) %>% arrange(-a))$race
+type_sort <- (artists %>% group_by(type) %>% summarize(a= mean(artists_share,na.rm=TRUE)) %>% arrange(-a))$type
+artists$race <- factor(artists$race,levels=race_sort,ordered=TRUE)
+artists$type <- factor(artists$type,levels=type_sort,ordered=TRUE)
+```
+```{r fig.width=10, fig.height=4}
+ggplot(artists, aes(all_workers_n, artists_n, color=type))  + stat_smooth(geom='line', alpha=0.5, se=FALSE) +  geom_point() + facet_wrap(vars(race), scales="free")
+```
+
